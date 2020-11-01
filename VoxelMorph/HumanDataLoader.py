@@ -50,4 +50,6 @@ for vol in range(len(fovea_list)):
             plt.title('slc: {}'.format(show),fontsize=15)
             plt.imshow(np.concatenate((top,bot),axis=0),cmap='gray')
             plt.show()
-        
+
+with open('E:\\vm_train.pickle','wb') as func:
+    pickle.dump(vm_train,func)
