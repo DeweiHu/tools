@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Nov  1 04:57:47 2020
 
-@author: hudew
+Use: the pre-processed data in shape [nFrame,nBscan,H,W]
+Do : 1. take the first frame 
+     2. stack slices within radius 
+     3. rigid registration
+     4. save is pickle tuple (stack1,stack2,....)
 """
 
 import sys
