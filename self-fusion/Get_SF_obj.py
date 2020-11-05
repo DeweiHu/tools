@@ -8,7 +8,7 @@ Created on Sun Nov  1 16:09:05 2020
 import sys
 sys.path.insert(0,'E:\\tools\\')
 import util
-import pickle, random
+import pickle, random, os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -27,30 +27,31 @@ def Re_Arrange(volume):
 global nFrame, radius
 nFrame = 5
 radius = 3
-
-vol = util.nii_loader('E:\\Retina2 Fovea_SNR 101_reg.nii')
-vol = Re_Arrange(np.transpose(vol,(2,0,1)))
-vol_var = np.var(vol,axis=0)
-vol = vol[0,:,:,:]
-
-vol_proj = vol_var
-H,slc,W = vol_proj.shape
-sf_proj = ()
-show = random.randint(radius,slc-radius)
+dataroot = 'E:\\OCTA\\data\\'
 
 #%%
-for i in range(radius,slc-radius):
-#    stack = np.transpose(vol_proj[:,i-radius:i+radius+1,:],(1,0,2))
-    stack = vol_proj[i-radius:i+radius+1,:,:]
-    sf_proj = sf_proj+(stack,)
-    
-    if i == show:
-        im_grand = np.concatenate((stack[0,:,:],stack[-1,:,:]),axis=1)
-        plt.figure(figsize=(12,8))
-        plt.imshow(im_grand,cmap='gray')
-        plt.axis('off')
-        plt.show()
-
-with open('E:\\sf_var.pickle','wb') as func:
-    pickle.dump(sf_proj,func)
+for file in os.listdir(dataroot):
+    if file.endswith('svd.nii'):
+        
+        print('volume: {}'.format(file))
+        vol = util.nii_loader(dataroot+file)
+        vol = np.transpose(vol,(2,1,0))
+        
+        H,slc,W = vol.shape
+        sf_proj = ()
+        show = random.randint(radius,slc-radius)
+        
+        for i in range(radius,slc-radius):
+            stack = vol[:,i-radius:i+radius+1,:]
+            sf_proj = sf_proj+(stack,)
+            
+#            if i == show:
+#                im_grand = np.concatenate((stack[:,0,:],stack[:,-1,:]),axis=1)
+#                plt.figure(figsize=(12,8))
+#                plt.imshow(im_grand,cmap='gray')
+#                plt.axis('off')
+#                plt.show()
+        
+        with open(dataroot+'SF({}).pickle'.format(file[:-4]),'wb') as func:
+            pickle.dump(sf_proj,func)
 
