@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Nov  1 20:15:13 2020
+
+@author: dewei
+"""
+
 # -*- coding: utf-8 -*-
 """
 The self fusion function takes a pickle input with a tuple
@@ -18,47 +26,48 @@ from PIL import Image
 from skimage import io
 
 dataroot = '/home/dewei/Desktop/OCTA/data/'
-filename = 'sf_proj.pickle'
+
 temp = '/home/dewei/Desktop/slc/'
-radius = 2
+radius = 3
 
-with open(dataroot+filename,'rb') as func:
-    data = pickle.load(func)
-
-depth = len(data)
-d,H,W = data[0].shape
-opt = np.zeros([depth,H,W],dtype=np.float32)
-show = random.randint(0,depth-1)
-
-if not d == 2*radius+1:
-    raise ValueError('radius not matching')
-
-for i in range(depth):
-    # clean up the temp directory for the next input
-    for file in os.listdir(temp):
-        os.remove(temp+file)
+for file in os.listdir(dataroot):
+    
+    if file.endswith('.pickle') and file.startswith('SF'):
+        print('volume:{}'.format(file))
         
-    stack = data[i]
-    im_fix = Image.fromarray(stack[radius,:,:])
-    im_fix.save(temp + 'fix_img.tif')
-    
-    # create atlases
-    for j in range(2*radius+1):
-        im_mov = Image.fromarray(stack[j,:,:])
-        im_mov.save(temp + 'atlas{}.tif'.format(j))
-    
-    # call the self-fusion function & take the result
-    subprocess.call("/home/dewei/self_fusion.sh")
-    opt[i,:,:] = io.imread(temp+'synthResult.tif')
-    
-    # display an example
-    if i == show:
-        plt.figure(figsize=(12,6))
-        plt.axis('off')
-        plt.imshow(np.concatenate((stack[radius,:,:],opt[i,:,:]),axis=1),cmap='gray')
-        plt.show()
-
-util.nii_saver(opt,dataroot,'SF(proj_shadow).nii.gz')
-    
+        with open(dataroot+file,'rb') as func:
+            data = pickle.load(func)
         
-    
+        if not os.path.exists(dataroot+file[3:-7]):
+            os.makedirs(dataroot+file[3:-7])
+        saveroot = dataroot+file[3:-7]    
+        
+        depth = len(data)
+        H,d,W = data[0].shape
+        opt = np.zeros([H,depth,W],dtype=np.float32)
+        org = np.zeros([H,depth,W],dtype=np.float32)
+        
+        if not d == 2*radius+1:
+            raise ValueError('radius not matching')
+        
+        for i in range(depth):
+            # clean up the temp directory for the next input
+            for file in os.listdir(temp):
+                os.remove(temp+file)
+                
+            stack = data[i]
+            im_fix = Image.fromarray(stack[:,radius,:])
+            im_fix.save(temp + 'fix_img.tif')
+            org[:,i,:] = stack[:,radius,:]
+            
+            # create atlases
+            for j in range(2*radius+1):
+                im_mov = Image.fromarray(stack[:,j,:])
+                im_mov.save(temp + 'atlas{}.tif'.format(j))
+            
+            # call the self-fusion function & take the result
+            subprocess.call("/home/dewei/self_fusion.sh")
+            opt[:,i,:] = io.imread(temp+'synthResult.tif')
+        
+        util.nii_saver(np.transpose(opt,(2,1,0)),saveroot,'{}.nii.gz'.format(file[:-7]))
+        util.nii_saver(np.transpose(org,(2,1,0)),saveroot,'{}.nii.gz'.format(file[3:-7]))
