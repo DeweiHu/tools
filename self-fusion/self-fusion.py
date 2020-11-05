@@ -38,9 +38,9 @@ for file in os.listdir(dataroot):
         with open(dataroot+file,'rb') as func:
             data = pickle.load(func)
         
-        if not os.path.exists(dataroot+file[3:-7]):
-            os.makedirs(dataroot+file[3:-7])
-        saveroot = dataroot+file[3:-7]    
+        if not os.path.exists(dataroot+file[3:-8]):
+            os.makedirs(dataroot+file[3:-8])
+        saveroot = dataroot+file[3:-8]    
         
         depth = len(data)
         H,d,W = data[0].shape
@@ -52,8 +52,8 @@ for file in os.listdir(dataroot):
         
         for i in range(depth):
             # clean up the temp directory for the next input
-            for file in os.listdir(temp):
-                os.remove(temp+file)
+            for weightmap in os.listdir(temp):
+                os.remove(temp+weightmap)
                 
             stack = data[i]
             im_fix = Image.fromarray(stack[:,radius,:])
@@ -69,5 +69,5 @@ for file in os.listdir(dataroot):
             subprocess.call("/home/dewei/self_fusion.sh")
             opt[:,i,:] = io.imread(temp+'synthResult.tif')
         
-        util.nii_saver(np.transpose(opt,(2,1,0)),saveroot,'{}.nii.gz'.format(file[:-7]))
-        util.nii_saver(np.transpose(org,(2,1,0)),saveroot,'{}.nii.gz'.format(file[3:-7]))
+        util.nii_saver(np.transpose(opt,(2,1,0)),saveroot,'{}.nii.gz'.format(file[:-8]))
+        util.nii_saver(np.transpose(org,(2,1,0)),saveroot,'{}.nii.gz'.format(file[3:-8]))
