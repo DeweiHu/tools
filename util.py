@@ -15,7 +15,7 @@ def nii_loader(dir):
     return data
 
 def nii_saver(volume,path,filename):
-    output = nib.Nifti1Image(volume,np.eye(4))
+    output = nib.Nifti1Image(volume,None)
     nib.save(output,os.path.join(path,filename))
 
 def nii_merge(file_a,file_b,axis):
@@ -47,8 +47,11 @@ def rot(img,dir):
         print('Direction undefined')
     return opt
 
-def ITKdisplay(v):
-    v = np.transpose(v,(1,2,0))
+'''
+import shape: [slc,H,W]
+'''
+def itkshape(v):
+    v = np.transpose(v,(0,2,1))
     h,w,slc = v.shape
     opt = np.zeros([w,h,slc],dtype=np.float32)
     for i in range(slc):
@@ -78,6 +81,28 @@ def dice(im1, im2):
     intersection = np.logical_and(im1, im2)
     return 2. * intersection.sum() / im_sum
 
+def sim_stat(im,template):
+    '''
+    compute the TP, TN, FP, FN, sensitivity, specificity, accuracy
+    '''
+    diff = np.abs(im-template).astype(np.bool)
+    im = np.asarray(im).astype(np.bool)
+    template = np.asarray(template).astype(np.bool)
+    if im.size != template.size:
+        raise ValueError("Size mismatch between input arrays!!!")
+    
+    tp = np.sum(np.logical_and(im,template))
+    tn = np.sum(np.logical_and(np.logical_not(im),np.logical_not(template)))
+    fp = np.sum(np.logical_and(diff,np.logical_not(template)))
+    fn = np.sum(np.logical_and(diff,template))
+    
+    sensitivity = tp/(tp+fn)
+    specificity = tn/(tn+fp)
+    accuracy = (tn+tp)/(tn+tp+fn+fp)
+    
+    return sensitivity,1-specificity,accuracy
+    
+    
 def hist_match(source, template):
     """
     Adjust the pixel values of a grayscale image such that its histogram
